@@ -2,52 +2,40 @@ const { Schema } = require('mongoose')
 const ObjectId = require('mongoose').Types.ObjectId
 const connection = require('../config')
 
-const postSchema = new Schema({
-  title: {
-    type: String,
-  },
-  subtitle: {
-    type: String,
-  },
-  meta: {
-    authorName: {
+const postSchema = new Schema(
+  {
+    title: {
       type: String,
     },
-    wordCount: {
-      type: Number,
-    },
-    userReferenceId: {
-      type: require('mongoose').Schema.Types.ObjectId,
-      ref: 'User',
-    },
-  },
-  description: {
-    type: String,
-  },
-  tags: [{ type: String }],
-})
+    meta: {
+      authorName: {
+        type: String,
+      },
 
-postSchema.statics.saveArticle = async function (data) {
+      userReferenceId: {
+        type: require('mongoose').Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    },
+    jsonData: {
+      type: String,
+    },
+    tags: [{ type: String }],
+  },
+  { timestamps: true }
+)
+
+postSchema.statics.savePost = async function (data) {
   try {
-    const {
-      title,
-      subtitle,
-      authorName,
-      description,
-      tagName,
-      userReferenceId,
-    } = data
-    const wordCount = description.split(' ').length
+    const { title, authorName, jsonData, tags, userReferenceId } = data
     return await this.create({
       title,
-      subtitle,
       meta: {
         authorName,
-        wordCount,
         userReferenceId: ObjectId(userReferenceId),
       },
-      description,
-      tagName,
+      jsonData,
+      tags: [...tags],
     })
   } catch (e) {
     console.log(e.message)
