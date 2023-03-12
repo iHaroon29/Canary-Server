@@ -3,6 +3,9 @@ const connection = require('../config')
 const ObjectId = require('mongoose').Types.ObjectId
 const imageSchema = new Schema(
   {
+    imageName: {
+      type: String,
+    },
     imageData: {
       type: Buffer,
     },
@@ -15,11 +18,16 @@ const imageSchema = new Schema(
 )
 
 imageSchema.statics.saveUserImage = async function ({
+  imageName,
   imageData,
   userReferenceId,
 }) {
   try {
-    const newImage = await this.create({ imageData, userReferenceId })
+    const newImage = await this.create({
+      imageName,
+      imageData,
+      userReferenceId,
+    })
     return newImage
   } catch (e) {
     console.log(e.message)

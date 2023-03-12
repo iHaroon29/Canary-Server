@@ -1,6 +1,8 @@
+const user_auth_model = require('../database/models/user_auth_model')
 const user_image_model = require('../database/models/user_image_model')
 const user_info_model = require('../database/models/user_info_model')
-const user_post_model = require('../database/models/user_post_model')
+const user_blog_model = require('../database/models/user_blog_model')
+const { createImageFile, deleteImageFile } = require('../utils/fs_utils')
 module.exports = {
   async fetchUserInfo(req, res, next) {
     try {
@@ -25,11 +27,15 @@ module.exports = {
     try {
       const { jsonData, title, tags } = req.body
       const { userId } = req.params
-      const newPost = await user_post_model.savePost({
+      const user = await user_auth_model.findUser({ _id: userId })
+      if (user.length === 0 || !user)
+        return res.status(400).send({ message: 'User does not exist!' })
+      const newPost = await user_blog_model.saveBlog({
         jsonData,
         title,
         userReferenceId: userId,
         tags,
+        authorName: user[0].username,
       })
       res.status(200).send({ post: newPost, message: 'OK' })
     } catch (e) {
@@ -40,7 +46,7 @@ module.exports = {
     try {
       const { _id, page } = req.query
       const { userId } = req.params
-      const posts = await user_post_model.findPosts(
+      const posts = await user_blog_model.findBlog(
         {
           _id,
           userReferenceId: userId,
@@ -55,17 +61,8 @@ module.exports = {
   async deleteUserPost(req, res, next) {
     try {
       const { _id } = req.query
-      const post = await user_post_model.deletePost(_id)
+      const post = await user_blog_model.deleteBlog(_id)
       res.status(200).send({ message: 'OK', post })
-    } catch (e) {
-      console.log(e.message)
-      res.status(500).send({ message: e.message })
-    }
-  },
-  async userSearch(req, res, next) {
-    try {
-      const { userId } = req.params
-      const { fullname } = req.search
     } catch (e) {
       console.log(e.message)
       res.status(500).send({ message: e.message })
@@ -73,12 +70,8 @@ module.exports = {
   },
   async saveUserImage(req, res, next) {
     try {
-      const { userId } = req.params
-      const newImage = await user_image_model.saveUserImage({
-        imageData: req.file.buffer,
-        userReferenceId: userId,
-      })
-      res.status(200).send({ imageId: newImage._id })
+      const filename = await createImageFile(req.body.upload)
+      res.status(200).send({ url: `http://localhost:8000/images/${filename}` })
     } catch (e) {
       res.status(500).send({ message: e.message })
     }
@@ -93,19 +86,52 @@ module.exports = {
         userReferenceId: userId,
       })
       if (!image) return res.status(404).send({ message: 'Image Not Found' })
-      res.set('Content-Type', 'image/png')
-      res.status(200).send(image.imageData)
+      res.set('Content-Type', 'image/jpeg')
+      res.status(200).send(Buffer.from(image[0].imageData.toString(), 'binary'))
     } catch (e) {
       res.status(500).send({ message: e.message })
     }
   },
   async deleteUserImage(req, res, next) {
     try {
-      const { imageId } = req.query
-      if (!imageId) return res.status(400).send({ message: 'Invalid Image Id' })
-      const image = await user_image_model.deleteUserImage({ _id: imageId })
-      if (!image) return res.status(404).send({ message: 'Image Not Found' })
-      res.status(200).json(image)
+      const { imageName } = req.query
+      const { userId } = req.params
+      const filePath = './static/images/' + imageName
+      const { isDeleted, message } = await deleteImageFile(filePath)
+      if (!isDeleted) return res.status(404).send({ message })
+      res.status(200).send({ message: `${imageName} has been deleted` })
+    } catch (e) {
+      res.status(500).send({ message: e.message })
+    }
+  },
+
+  async saveUserDraft(req, res, next) {
+    try {
+      const { id } = req.body
+      const exitingBlog = await user_blog_model.findBlog({ uniqueId })
+      const newDraft = await user_blog_model.saveBlog({
+        ...req.body,
+        isDraft: true,
+      })
+      res.status(200).send({})
+    } catch (e) {
+      res.status(500).send({ message: e.message })
+    }
+  },
+  async findUserDraft(req, res, next) {
+    try {
+    } catch (e) {
+      res.status(500).send({ message: e.message })
+    }
+  },
+  async updateUserDraft(req, res, next) {
+    try {
+    } catch (e) {
+      res.status(500).send({ message: e.message })
+    }
+  },
+  async deleteUserDraft(req, res, next) {
+    try {
     } catch (e) {
       res.status(500).send({ message: e.message })
     }

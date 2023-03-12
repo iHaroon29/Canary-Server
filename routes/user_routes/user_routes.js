@@ -1,15 +1,7 @@
 const router = require('express').Router()
-// const upload = require('multer')({
-//   limits: { fileSize: 1000000 },
-//   fileFilter(req, file, cb) {
-//     if (!file.originalname.match(/\.(png|jpg|jpeg)$/)) {
-//       cb(new Error('Please upload an image.'))
-//     }
-//     cb(undefined, true)
-//   },
-// })
-
-const { authenticate } = require('../../controller/encryption_controller')
+const {
+  authenticateMiddleware,
+} = require('../../controller/encryption_controller')
 const {
   fetchUserInfo,
   updateUserInfo,
@@ -17,25 +9,32 @@ const {
   deleteUserPost,
   saveUserPost,
   saveUserImage,
-  findUserImage,
   deleteUserImage,
+  saveUserDraft,
+  findUserDraft,
+  updateUserDraft,
+  deleteUserDraft,
 } = require('../../controller/user_action_controller')
 
 // Image Routes
-router.get('/:userId/image?', [authenticate, findUserImage])
-router.post('/:userId/image', [authenticate, saveUserImage])
-router.delete('/:userId/image?', [authenticate, deleteUserImage])
+router.post('/:userId/image', [authenticateMiddleware, saveUserImage])
+router.delete('/:userId/image?', [authenticateMiddleware, deleteUserImage])
 
 //Blog Routes
-router.get('/:userId/posts?', [authenticate, fetchUserPosts])
-router.post('/:userId/posts', [saveUserPost])
-router.delete('/:userId/post?', [authenticate, deleteUserPost])
+router.get('/:userId/blogs?', [authenticateMiddleware, fetchUserPosts])
+router.post('/:userId/blogs', [authenticateMiddleware, saveUserPost])
+router.delete('/:userId/blogs?', [authenticateMiddleware, deleteUserPost])
+
+// Blog Draft Routes
+router.post('/:userId/draft', [authenticateMiddleware, saveUserDraft])
+router.get('/:userId/draft?', [authenticateMiddleware, findUserDraft])
+router.put('/:userId/draft?', [authenticateMiddleware, updateUserDraft])
+router.delete('/:userId/draft?', [authenticateMiddleware, deleteUserDraft])
 
 // User Info Routes
-router.get('/:userId/profile', [authenticate, fetchUserInfo])
-router.put('/:userId/profile', [authenticate, updateUserInfo])
+router.get('/:userId/profile', [authenticateMiddleware, fetchUserInfo])
+router.put('/:userId/profile', [authenticateMiddleware, updateUserInfo])
 
 // User Search Routes
-// router.get('/:userId/search?')
 
 module.exports = router

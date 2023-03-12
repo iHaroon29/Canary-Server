@@ -1,6 +1,6 @@
 const http = require('http')
 const app = require('./app')
-const port = process.env.NODE_env === 'prod' ? process.env.PORT : 8000
+const port = process.env.NODE_ENV === 'prod' ? process.env.PORT : 8000
 if (process.env.NODE_ENV === 'dev') {
   const server = http.createServer(app)
   server.listen(port)

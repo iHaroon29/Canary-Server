@@ -2,9 +2,9 @@ const { Schema } = require('mongoose')
 const ObjectId = require('mongoose').Types.ObjectId
 const connection = require('../config')
 
-const postSchema = new Schema(
+const blogSchema = new Schema(
   {
-    title: {
+    uniqueId: {
       type: String,
     },
     meta: {
@@ -21,13 +21,17 @@ const postSchema = new Schema(
       type: String,
     },
     tags: [{ type: String }],
+    isDraft: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 )
 
-postSchema.statics.savePost = async function (data) {
+blogSchema.statics.saveBlog = async function (data) {
   try {
-    const { title, authorName, jsonData, tags, userReferenceId } = data
+    const { title, authorName, jsonData, tags, userReferenceId, isDraft } = data
     return await this.create({
       title,
       meta: {
@@ -36,13 +40,14 @@ postSchema.statics.savePost = async function (data) {
       },
       jsonData,
       tags: [...tags],
+      isDraft,
     })
   } catch (e) {
     console.log(e.message)
   }
 }
 
-postSchema.statics.findPosts = async function (data, page = 0) {
+blogSchema.statics.findBlog = async function (data, page = 0) {
   try {
     const pageNumber =
       parseInt(page) >= 0 && parseInt(page) ? parseInt(page) : 0
@@ -63,7 +68,7 @@ postSchema.statics.findPosts = async function (data, page = 0) {
   }
 }
 
-postSchema.statics.deletePost = async function (_id) {
+blogSchema.statics.deleteBlog = async function (_id) {
   try {
     return await this.findByIdAndUpdate(_id)
   } catch (e) {
@@ -71,4 +76,4 @@ postSchema.statics.deletePost = async function (_id) {
   }
 }
 
-module.exports = connection.model('post', postSchema)
+module.exports = connection.model('blog', blogSchema)
