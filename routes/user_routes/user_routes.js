@@ -1,22 +1,40 @@
 const router = require('express').Router()
-const { authenticate } = require('../../controller/encryption_controller')
+const {
+  authenticateMiddleware,
+} = require('../../controller/encryption_controller')
 const {
   fetchUserInfo,
   updateUserInfo,
   fetchUserPosts,
   deleteUserPost,
+  saveUserPost,
+  saveUserImage,
+  deleteUserImage,
+  saveUserDraft,
+  findUserDraft,
+  updateUserDraft,
+  deleteUserDraft,
 } = require('../../controller/user_action_controller')
 
-// Post Routes
-router.get('/:userId/posts?', [authenticate, fetchUserPosts])
-// router.update('/:userId/post?')
-router.delete('/:userId/post?', [authenticate, deleteUserPost])
+// Image Routes
+router.post('/:userId/image', [authenticateMiddleware, saveUserImage])
+router.delete('/:userId/image?', [authenticateMiddleware, deleteUserImage])
+
+//Blog Routes
+router.get('/:userId/blogs?', [authenticateMiddleware, fetchUserPosts])
+router.post('/:userId/blogs', [authenticateMiddleware, saveUserPost])
+router.delete('/:userId/blogs?', [authenticateMiddleware, deleteUserPost])
+
+// Blog Draft Routes
+router.post('/:userId/draft', [authenticateMiddleware, saveUserDraft])
+router.get('/:userId/draft?', [authenticateMiddleware, findUserDraft])
+router.put('/:userId/draft?', [authenticateMiddleware, updateUserDraft])
+router.delete('/:userId/draft?', [authenticateMiddleware, deleteUserDraft])
 
 // User Info Routes
-router.get('/:userId/profile', [authenticate, fetchUserInfo])
-router.put('/:userId/profile', [authenticate, updateUserInfo])
+router.get('/:userId/profile', [authenticateMiddleware, fetchUserInfo])
+router.put('/:userId/profile', [authenticateMiddleware, updateUserInfo])
 
 // User Search Routes
-// router.get('/:userId/search?')
 
 module.exports = router

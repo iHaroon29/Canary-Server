@@ -2,59 +2,52 @@ const { Schema } = require('mongoose')
 const ObjectId = require('mongoose').Types.ObjectId
 const connection = require('../config')
 
-const postSchema = new Schema({
-  title: {
-    type: String,
-  },
-  subtitle: {
-    type: String,
-  },
-  meta: {
-    authorName: {
+const blogSchema = new Schema(
+  {
+    uniqueId: {
       type: String,
     },
-    wordCount: {
-      type: Number,
-    },
-    userReferenceId: {
-      type: require('mongoose').Schema.Types.ObjectId,
-      ref: 'User',
-    },
-  },
-  description: {
-    type: String,
-  },
-  tags: [{ type: String }],
-})
+    meta: {
+      authorName: {
+        type: String,
+      },
 
-postSchema.statics.saveArticle = async function (data) {
+      userReferenceId: {
+        type: require('mongoose').Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    },
+    jsonData: {
+      type: String,
+    },
+    tags: [{ type: String }],
+    isDraft: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { timestamps: true }
+)
+
+blogSchema.statics.saveBlog = async function (data) {
   try {
-    const {
-      title,
-      subtitle,
-      authorName,
-      description,
-      tagName,
-      userReferenceId,
-    } = data
-    const wordCount = description.split(' ').length
+    const { title, authorName, jsonData, tags, userReferenceId, isDraft } = data
     return await this.create({
       title,
-      subtitle,
       meta: {
         authorName,
-        wordCount,
         userReferenceId: ObjectId(userReferenceId),
       },
-      description,
-      tagName,
+      jsonData,
+      tags: [...tags],
+      isDraft,
     })
   } catch (e) {
     console.log(e.message)
   }
 }
 
-postSchema.statics.findPosts = async function (data, page = 0) {
+blogSchema.statics.findBlog = async function (data, page = 0) {
   try {
     const pageNumber =
       parseInt(page) >= 0 && parseInt(page) ? parseInt(page) : 0
@@ -75,7 +68,7 @@ postSchema.statics.findPosts = async function (data, page = 0) {
   }
 }
 
-postSchema.statics.deletePost = async function (_id) {
+blogSchema.statics.deleteBlog = async function (_id) {
   try {
     return await this.findByIdAndUpdate(_id)
   } catch (e) {
@@ -83,4 +76,4 @@ postSchema.statics.deletePost = async function (_id) {
   }
 }
 
-module.exports = connection.model('post', postSchema)
+module.exports = connection.model('blog', blogSchema)

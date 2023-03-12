@@ -28,9 +28,14 @@ module.exports = {
         email,
         userReferenceId: newUser._id,
       })
-      const accessToken = await generateToken(newUser._id, 10 * 60)
-      const refreshToken = await generateToken(newUser._id, 30 * 60 * 60)
-      res.status(200).send({ authorization: true, accessToken, refreshToken })
+      const accessToken = await generateToken(newUser._id, 15 * 60)
+      const refreshToken = await generateToken(newUser._id, 24 * 60 * 60 * 2)
+      res.cookie('canary_refresh', refreshToken, {
+        httpOnly: true,
+        expires: new Date(Date.now() + 48 * 3600000),
+        sameSite: 'none',
+      })
+      res.status(200).send({ authorization: true, accessToken })
     } catch (e) {
       res.status(500).send({ message: e.message, authorization: false })
     }
@@ -51,14 +56,19 @@ module.exports = {
       const accessToken = await generateToken(existingUser[0]._id, 15 * 60)
       const refreshToken = await generateToken(
         existingUser[0]._id,
-        30 * 60 * 60
+        24 * 60 * 60 * 2
       )
-      res.status(200).send({ authorization: true, accessToken, refreshToken })
+      res.cookie('canary_refresh', refreshToken, {
+        maxAge: 900000,
+        httpOnly: true,
+        sameSite: 'none',
+      })
+      res.status(200).send({ authorization: true, accessToken })
     } catch (e) {
       res.status(500).send({ message: e.message, authorization: false })
     }
   },
-  async authenticate(req, res, next) {
+  async authenticateMiddleware(req, res, next) {
     try {
       const { authorization } = req.headers
       if (!authorization)
@@ -81,19 +91,28 @@ module.exports = {
       res.status(500).send({ message: e.message, authorization: false })
     }
   },
+
   async refreshAuth(req, res, next) {
     try {
-      const { token } = req.query
-      if (!(await verifyToken(token))) {
+      const { canary_refresh } = req.cookies
+      if (!(await verifyToken(canary_refresh))) {
         return res
           .status(400)
           .send({ message: 'Token Invalid', authorization: false })
       }
-      const data = await decodeToken(token).data
+      const data = await decodeToken(canary_refresh).data
       const accessToken = await generateToken(data, 10 * 60)
-      res.status(200).send({ accessToken, message: 'OK' })
+      res.status(200).send({ accessToken, authorization: true })
     } catch (e) {
       res.status(500).send({ message: e.message, authorization: false })
+    }
+  },
+  async logout(req, res, next) {
+    try {
+      res.clearCookie('canary_refresh')
+      res.status(200).send({ logout: true })
+    } catch (e) {
+      res.status(500).send({ message: e.message })
     }
   },
 }
